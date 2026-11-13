@@ -353,7 +353,7 @@
 		(uuid "7940ebb2-8be3-4a68-a7d6-187351a44a73")
 	)
 	(embedded_fonts no)
-	(model "kicad-embed://wurthelek_434133025816.step"
+	(model "${KIPRJMOD}/lib/rpi.3dshapes/wurthelek_434133025816.step"
 		(offset
 			(xyz 0 0 0)
 		)

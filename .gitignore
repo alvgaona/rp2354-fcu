@@ -10,3 +10,4 @@ hw/fc.net.xml
 hw/fp-info-cache
 hw/*-backups/
 __pycache__/
+.DS_Store

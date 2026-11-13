@@ -373,7 +373,7 @@
 		(uuid "d4b08fd2-e8c1-48c2-94d4-ad9be50bda27")
 	)
 	(embedded_fonts no)
-	(model "kicad-embed://abracon_aota-b201610s3r3-101-t.step"
+	(model "${KIPRJMOD}/lib/rpi.3dshapes/abracon_aota-b201610s3r3-101-t.step"
 		(offset
 			(xyz 0 0 0)
 		)

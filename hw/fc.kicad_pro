@@ -382,6 +382,26 @@
       {
         "netclass": "GND",
         "pattern": "GND"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "/VBAT"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "/VIN"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "/SW_BUCK"
+      },
+      {
+        "netclass": "Fine",
+        "pattern": "/CC1"
+      },
+      {
+        "netclass": "Fine",
+        "pattern": "/CC2"
       }
     ]
   },

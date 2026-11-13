@@ -355,7 +355,7 @@
 		(uuid "a0cae853-2f1f-47b3-b2e0-07da93abb68f")
 	)
 	(embedded_fonts no)
-	(model "kicad-embed://generic_capc1005x50.step"
+	(model "${KIPRJMOD}/lib/rpi.3dshapes/generic_capc1005x50.step"
 		(offset
 			(xyz 0 0 0)
 		)

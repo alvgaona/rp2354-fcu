@@ -376,7 +376,7 @@
 		(uuid "e796353e-2038-4ad0-99dd-a6d14d7660d3")
 	)
 	(embedded_fonts no)
-	(model "kicad-embed://generic_xtalcc320x250x80-4.step"
+	(model "${KIPRJMOD}/lib/rpi.3dshapes/generic_xtalcc320x250x80-4.step"
 		(offset
 			(xyz 0 0 0)
 		)

@@ -6,6 +6,7 @@
 import math
 import os
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pcbnew
@@ -17,6 +18,7 @@ from gen_sch import uid  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 HW = ROOT / "hw"
 PCB = HW / "fc.kicad_pcb"
+NETLIST = ROOT / "build" / "fc.net.xml"
 PLACED = ROOT / "build" / "placed.kicad_pcb"  # pre-route snapshot so routing can be retried
 REF = Path(sys.argv[2]) if len(sys.argv) > 2 else None  # Raspberry Pi minimal design .kicad_pcb
 KSHARE = Path("/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints")
@@ -64,6 +66,25 @@ PLACE = {
 HOLES = [PLACE[h][:2] for h in ("H1", "H2", "H3", "H4")]
 HOLE_KEEPOUT = 3.2  # mm radius without copper: an M3 screw head is 5.5-6 mm across
 VIA_D = 0.6
+# small print on the back: IBM Plex Mono Medium ("Medm" is the family name the font file declares for that weight).
+# The font file is in hw/fonts and must be installed: KiCad silently substitutes another font if it is missing.
+FACE, FONT_FILE = "IBM Plex Mono Medm", "IBMPlexMono-Medium.ttf"
+# mask colour for the 3D render: slightly see-through so tracks show, and shifted towards blue because orange
+# copper under a neutral see-through black (KiCad's stock "Black" included) comes out brown
+STACKUP = """\t\t(stackup
+\t\t\t(layer "F.SilkS" (type "Top Silk Screen") (color "White"))
+\t\t\t(layer "F.Paste" (type "Top Solder Paste"))
+\t\t\t(layer "F.Mask" (type "Top Solder Mask") (color "#00080EE6") (thickness 0.01))
+\t\t\t(layer "F.Cu" (type "copper") (thickness 0.035))
+\t\t\t(layer "dielectric 1" (type "core") (thickness 1.51) (material "FR4") (epsilon_r 4.5) (loss_tangent 0.02))
+\t\t\t(layer "B.Cu" (type "copper") (thickness 0.035))
+\t\t\t(layer "B.Mask" (type "Bottom Solder Mask") (color "#00080EE6") (thickness 0.01))
+\t\t\t(layer "B.Paste" (type "Bottom Solder Paste"))
+\t\t\t(layer "B.SilkS" (type "Bottom Silk Screen") (color "White"))
+\t\t\t(copper_finish "None")
+\t\t\t(dielectric_constraints no)
+\t\t)
+"""
 
 
 def mm(v):
@@ -105,8 +126,9 @@ def rules(b):
     pwr.SetViaDiameter(mm(0.6))
     pwr.SetViaDrill(mm(0.3))  # one via size for all nets: Freerouting mixed up padstacks
     ds.m_NetSettings.SetNetclass("Power", pwr)
-    for n in ("VBAT", "VIN", "SW_BUCK"):
+    for n in ("VBAT", "VIN", "SW_BUCK"):  # with and without the "/" of the schematic's names, see place()
         ds.m_NetSettings.SetNetclassPatternAssignment(n, "Power")
+        ds.m_NetSettings.SetNetclassPatternAssignment("/" + n, "Power")
     # USB-C CC pins sit between 0.3 mm pads at 0.5 mm pitch; without a 0.1/0.1 class the router leaves one net open
     fine = pcbnew.NETCLASS("Fine")
     fine.SetClearance(mm(0.1))
@@ -116,6 +138,7 @@ def rules(b):
     ds.m_NetSettings.SetNetclass("Fine", fine)
     for n in ("CC1", "CC2"):
         ds.m_NetSettings.SetNetclassPatternAssignment(n, "Fine")
+        ds.m_NetSettings.SetNetclassPatternAssignment("/" + n, "Fine")
     # GND gets its own class only so the router can skip it (-inc GND): gnd_vias() ties every pad to the pour
     gnd = pcbnew.NETCLASS("GND")
     gnd.SetClearance(mm(0.15))
@@ -334,11 +357,14 @@ def place():
     b = pcbnew.NewBoard(str(PCB))
     rules(b)
     # net names come from KiCad's own netlist export, so the board matches the schematic exactly
-    # (including the per-pin "unconnected-(...)" nets KiCad gives no-connect pins)
-    import xml.etree.ElementTree as ET
+    # (including the per-pin "unconnected-(...)" nets KiCad gives no-connect pins).
+    # A label in the schematic names its net "/XIN". The board is laid out and routed with the bare names,
+    # in their sorted order: the router's result depends on both. finish() puts the "/" back.
     pinnet, netinfo = {}, {}
-    for n in ET.parse(ROOT / "build" / "fc.net.xml").getroot().find("nets"):
-        name = n.get("name")
+    nets = list(ET.parse(NETLIST).getroot().find("nets"))
+    nets.sort(key=lambda n: (True, "") if n.get("name").startswith("unconnected-(") else (False, n.get("name").lstrip("/")))
+    for n in nets:
+        name = n.get("name").lstrip("/")
         if name.startswith("unconnected-("):
             name = name.replace("/", "{slash}")  # KiCad escapes '/' in pin names inside net names
         netinfo[name] = pcbnew.NETINFO_ITEM(b, name)
@@ -550,16 +576,13 @@ def place():
     print("saved", PCB, "and fc.dsn")
 
 
-def export_dsn(src, drop_pours=False):
+def export_dsn(src):
     """Freerouting ignores arcs and zones: export a copy with arcs flattened to chords (so it sees them as
     connected) and router-only keepouts over the reference's copper zones."""
     s = pcbnew.LoadBoard(str(src))
     for z in list(s.Zones()):
         if z.GetIsRuleArea():
             continue  # mounting-hole keepouts export as they are
-        if drop_pours and z.GetAssignedPriority() == 0:
-            s.Remove(z)
-            continue
         k = pcbnew.ZONE(s)
         k.SetIsRuleArea(True)
         k.SetDoNotAllowTracks(True)
@@ -594,12 +617,6 @@ def export_dsn(src, drop_pours=False):
         sys.exit("DSN export failed")
 
 
-def reroute():
-    """Second routing round: hand the routed board back to Freerouting (router copper stays movable)."""
-    export_dsn(PCB, drop_pours=True)
-    print("exported routed board to fc.dsn")
-
-
 def zone(b, net, layer, prio, clearance, min_width):
     z = pcbnew.ZONE(b)
     z.SetLayer(layer)
@@ -617,9 +634,14 @@ def zone(b, net, layer, prio, clearance, min_width):
     b.Add(z)
 
 
-def silk(b, text, x, y, size=0.8, rot=0, layer=pcbnew.F_SilkS):
+def silk(b, text, x, y, size=0.8, rot=0, layer=pcbnew.F_SilkS, face=None, left=False):
     t = pcbnew.PCB_TEXT(b)
     t.SetText(text)
+    if left:
+        t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    if face:
+        t.SetUnresolvedFontName(face)  # a system font, not embedded in the board file
+        t.ResolveFont(b.GetEmbeddedFonts())
     t.SetPosition(pt(x, y))
     t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
     t.SetTextThickness(mm(size * 0.15))
@@ -629,6 +651,9 @@ def silk(b, text, x, y, size=0.8, rot=0, layer=pcbnew.F_SilkS):
 
 
 def finish():
+    if not (os.environ.get("FONTCONFIG_FILE") or any((d / FONT_FILE).is_file() for d in
+                                                     (Path.home() / "Library/Fonts", Path("/Library/Fonts")))):
+        sys.exit(f"install hw/fonts/{FONT_FILE} first (double-click it): the text on the back needs it")
     ses = sys.argv[2] if len(sys.argv) > 2 else str(HW / "fc.ses")
     b = pcbnew.LoadBoard(str(PLACED))
     s = pcbnew.LoadBoard(str(PLACED))
@@ -671,13 +696,25 @@ def finish():
     silk(b, "OUT", 31.6, 32.9, 0.8)
     silk(b, "2S", 36.6, 8.2, 0.8), silk(b, "+", 32.5, 12.0), silk(b, "-", 32.5, 14.5)
     silk(b, "GPS", 7.8, 10.4, 0.8), silk(b, "SWD", 31.2, 30.6, 0.8)
-    silk(b, f"RP2354A FC rev {REV}", 20.0, 22.0, 1.0, layer=pcbnew.B_SilkS)
+    # small print on the back, running up the right-hand side (as seen from the back) between the mounting holes.
+    # Strokes are about 0.13 mm at this size, like the other labels. DRC still gives a text_thickness warning per
+    # line: every Plex weight does, bold included, so it is reacting to the notches at the joins, not the weight.
+    for i, line in enumerate(("RP2354A Flight Controller", f"Rev {REV}  ICM-42688-P/2S LiPo",
+                              "Designed by Rewire Robotics LLC.", "Made in China.")):
+        silk(b, line, 6.2 - 1.25 * i, 31.4, 0.8, rot=270, layer=pcbnew.B_SilkS, face=FACE, left=True)
     for t in b.GetDrawings():
         if t.GetLayer() == pcbnew.B_SilkS and isinstance(t, pcbnew.PCB_TEXT):
             t.SetMirrored(True)
     filler = pcbnew.ZONE_FILLER(b)
     filler.Fill(b.Zones())
+    for n in ET.parse(NETLIST).getroot().find("nets"):  # back to the schematic's net names, see place()
+        if n.get("name").startswith("/"):
+            b.FindNet(n.get("name")[1:]).SetNetname(n.get("name"))
     pcbnew.SaveBoard(str(PCB), b)
+    # black solder mask, white silkscreen: the Python API has no stackup access, so write it into the file
+    text = PCB.read_text()
+    assert text.count("\t(setup\n") == 1 and "(stackup" not in text
+    PCB.write_text(text.replace("\t(setup\n", "\t(setup\n" + STACKUP))
     # DRC cannot see a pour that tracks have cut into pieces if a thin track still joins them: report it
     for z in b.Zones():
         if z.GetAssignedPriority() == 0 and not z.GetIsRuleArea():
@@ -689,4 +726,4 @@ if __name__ == "__main__":
     # KiCad gives new items random IDs and writes files sorted by ID, so the autorouter would see a different
     # item order (and route differently) on every build. A fixed seed makes the build reproducible.
     pcbnew.KIID.SeedGenerator(int(os.environ.get("FC_SEED", "1")))
-    {"place": place, "finish": finish, "reroute": reroute}[sys.argv[1]]()
+    {"place": place, "finish": finish}[sys.argv[1]]()

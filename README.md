@@ -42,14 +42,14 @@ To load firmware: hold BOOTSEL while plugging in USB. There's no reset button, s
 
 ## Rebuild
 
-You need KiCad 10 and pixi (Java and Python come from pixi). Place `freerouting-2.5.0.jar` in the repo root.
+You need KiCad 10 and pixi (Java and Python come from pixi). Place `freerouting-2.5.0.jar` in the repo root. Install the font `hw/fonts/IBMPlexMono-Medium.ttf` (double-click it); the text on the back of the board uses it.
 
 ```sh
 scripts/build.sh   # schematic, ERC, PCB, autoroute, DRC, layout check
-scripts/fab.sh     # build/fab: gerbers zip, BOM, CPL, schematic PDF
+scripts/fab.sh     # build/fab: gerbers zip, BOM, CPL, assembly drawing, schematic PDF
 ```
 
-`scripts/design.py` is the single source of truth for the circuit and `scripts/build_pcb.py` for the layout. `hw/fc.kicad_sch` and `hw/fc.kicad_pcb` are generated, so edit the scripts rather than those files. `ref/` holds the Raspberry Pi RP2350A minimal design (MIT licence) that the MCU core layout is copied from.
+`scripts/design.py` is the single source of truth for the circuit and `scripts/build_pcb.py` for the layout. `scripts/gen_sch.py` draws the schematic: the blocks are placed and wired by hand there, and the build fails if the drawing connects anything differently from `design.py`. `hw/fc.kicad_sch` and `hw/fc.kicad_pcb` are generated, so edit the scripts rather than those files. `ref/` holds the Raspberry Pi RP2350A minimal design (MIT licence) that the MCU core layout is copied from.
 
 How the layout is made:
 
@@ -60,6 +60,6 @@ How the layout is made:
 
 ## Ordering (PCBWay)
 
-- Bare board: upload `fc-gerbers-rev0.1.0.zip` with 2 layers, 1.6 mm thickness, and a 0.1 mm (4 mil) minimum track/space. The RP2350 QFN needs that space. The smallest drill is 0.25 mm.
-- Assembly: also upload `fc-bom-rev0.1.0.csv` and `fc-cpl-rev0.1.0.csv`. The CPL uses KiCad coordinates, so Y is negative.
+- Bare board: upload `fc-gerbers-rev0.1.0.zip` with 2 layers, 1.6 mm thickness, black solder mask with white silkscreen, and a 0.1 mm (4 mil) minimum track/space. The RP2350 QFN needs that space. The smallest drill is 0.25 mm.
+- Assembly: also upload `fc-bom-rev0.1.0.csv`, `fc-cpl-rev0.1.0.csv` and `fc-assembly-rev0.1.0.pdf`. The CPL gives the centre of each part's body in KiCad coordinates, so Y is negative. The silkscreen has no reference designators; the assembly drawing shows them.
 - The ICM-42688-P has been out of stock at LCSC. Check the price and stock with PCBWay before ordering.

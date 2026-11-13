@@ -379,7 +379,7 @@
 		(uuid "218ddb28-65fa-4a98-9efa-534321913484")
 	)
 	(embedded_fonts no)
-	(model "kicad-embed://generic_resc1005x35.step"
+	(model "${KIPRJMOD}/lib/rpi.3dshapes/generic_resc1005x35.step"
 		(offset
 			(xyz 0 0 0)
 		)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 KICAD = Path("/Applications/KiCad/KiCad.app/Contents/SharedSupport")
 ROOT = Path(__file__).resolve().parent.parent
-LIBDIRS = {"easyeda": ROOT / "hw/lib/easyeda.kicad_sym"}
+LIBDIRS = {"fc": ROOT / "hw/lib/fc.kicad_sym"}
 
 _TOK = re.compile(r'\s*(\(|\)|"(?:[^"\\]|\\.)*"|[^\s()"]+)')
 
