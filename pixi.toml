@@ -1,0 +1,13 @@
+[workspace]
+authors = ["Alvaro Gaona <alvgaona@gmail.com>"]
+channels = ['conda-forge']
+name = "board-challenge"
+platforms = ['osx-arm64']
+version = "0.1.0"
+
+[dependencies]
+python = "3.13.*"
+openjdk = "25.*"
+
+[pypi-dependencies]
+easyeda2kicad = "*"

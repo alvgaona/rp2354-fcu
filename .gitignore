@@ -1,0 +1,12 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+freerouting-*.jar
+build/
+hw/fc.dsn
+hw/fc.ses
+hw/*.kicad_prl
+hw/fc.net.xml
+hw/fp-info-cache
+hw/*-backups/
+__pycache__/
