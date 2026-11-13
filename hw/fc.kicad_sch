@@ -10,7 +10,7 @@
 		(rev "0.1.0")
 		(comment
 			1
-			"Drawn by scripts/gen_sch.py; netlist checked against scripts/design.py by scripts/build.sh"))
+			"Checked by scripts/build.sh"))
 	(lib_symbols
 		(symbol
 			"Connector_Generic:Conn_01x02"

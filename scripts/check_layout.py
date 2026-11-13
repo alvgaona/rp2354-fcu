@@ -1,4 +1,4 @@
-"""Layout checks that KiCad's DRC cannot make (run with KiCad's bundled Python after `build_pcb.py finish`).
+"""Layout checks that KiCad's DRC cannot make (run by scripts/build.sh with KiCad's Python, which has pcbnew).
 
 DRC passes a board whose ground is a chain of thin tracks, or whose pour hangs together by a hair.
 These are the things the rev 0.1.0 review found by hand.
