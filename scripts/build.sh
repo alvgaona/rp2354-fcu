@@ -67,7 +67,7 @@ check_drc() {
 # What DRC cannot check: a ground via at every ground pad, the ground pour in one solid piece,
 # no pad fed only by a thin 3.3 V track, and nothing drilled under the IMU.
 check_layout() {
-  "$KICAD_PYTHON" scripts/check_layout.py 2>&1 | quiet
+  "$KICAD_PYTHON" scripts/check_layout.py "$PCB" 2>&1 | quiet
 }
 
 # The schematic as a PDF.
