@@ -47,7 +47,3 @@ It then writes these files to `build/`.
 - The schematic as a PDF (`fc-schematic.pdf`)
 - The assembled board in 3D (`fc.glb`)
 - The board package with all of the above plus the KiCad files (`fc-rev<rev>.zip`)
-
-## License
-
-[MIT](LICENSE).
