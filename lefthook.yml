@@ -1,0 +1,7 @@
+# The tools live in the pixi environment, so the git hook starts lefthook through pixi.
+lefthook: pixi run lefthook
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pixi run commitlint --edit {1}

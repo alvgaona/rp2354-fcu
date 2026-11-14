@@ -8,6 +8,11 @@ version = "0.1.0"
 
 [tasks]
 build = { cmd = "scripts/build.sh" } 
+changelog = "git-cliff -o CHANGELOG.md"
+hooks = "lefthook install"
 
 [dependencies]
 python = "3.13.*"
+git-cliff = ">=2.14.2,<3"
+lefthook = ">=2.2.2,<3"
+commitlint = ">=21.2.4,<22"
