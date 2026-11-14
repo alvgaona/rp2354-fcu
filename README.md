@@ -50,5 +50,4 @@ It then writes these files to `build/`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
+[MIT](LICENSE).
