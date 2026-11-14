@@ -1,0 +1,13 @@
+[workspace]
+authors = ["Alvaro Gaona <alvgaona@gmail.com>"]
+channels = ['conda-forge']
+description = "A 40 × 40 mm flight control unit built around the RP2354A, with an ICM-42688-P IMU, GPS and eight servo outputs"
+name = "rp2354-fcu"
+platforms = ['osx-arm64', 'linux-64']
+version = "0.1.0"
+
+[tasks]
+build = { cmd = "scripts/build.sh" } 
+
+[dependencies]
+python = "3.13.*"

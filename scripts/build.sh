@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Check the KiCad design and export everything needed to order and view the board, into build/.
 #
-#   scripts/build.sh
+#   pixi run build      (or scripts/build.sh, with any Python 3 on PATH)
 #
 # Runs on macOS and Linux. Tools are found on PATH or in their usual macOS install places;
 # set KICAD_CLI, KICAD_PYTHON or PYTHON to point at one explicitly.
@@ -28,8 +28,8 @@ find_tool() {
 KICAD_APP=/Applications/KiCad/KiCad.app/Contents
 KICAD_CLI=${KICAD_CLI:-$(find_tool kicad-cli $KICAD_APP/MacOS/kicad-cli || true)}
 PYTHON=${PYTHON:-$(find_tool python3 || true)}
-# The Python that has KiCad's pcbnew module: KiCad's own on macOS, the system one on Linux.
-KICAD_PYTHON=${KICAD_PYTHON:-$(find_tool $KICAD_APP/Frameworks/Python.framework/Versions/Current/bin/python3 python3 || true)}
+# The Python that has KiCad's pcbnew module: KiCad's own on macOS, the system one on Linux (pixi's has none).
+KICAD_PYTHON=${KICAD_PYTHON:-$(find_tool $KICAD_APP/Frameworks/Python.framework/Versions/Current/bin/python3 /usr/bin/python3 python3 || true)}
 [ -n "$KICAD_CLI" ] || { echo "kicad-cli not found: install KiCad or set KICAD_CLI"; exit 1; }
 [ -n "$PYTHON" ] || { echo "Python 3 not found: install it or set PYTHON"; exit 1; }
 
