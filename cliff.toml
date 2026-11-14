@@ -10,11 +10,11 @@ All notable changes to this project are documented here.\n
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/alvgaona/board-challenge
+  https://github.com/alvgaona/rp2354-fcu
 {%- endmacro -%}
 
 {% if version -%}
-  ## [{{ version | trim_start_matches(pat="v") }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+  ## [{{ version | trim_start_matches(pat="rev-") }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else -%}
   ## Unreleased
 {% endif -%}
@@ -37,7 +37,7 @@ filter_unconventional = true
 split_commits = false
 protect_breaking_commits = true
 filter_commits = false
-tag_pattern = "v[0-9].*"
+tag_pattern = "rev-[0-9].*"
 sort_commits = "newest"
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->Features" },

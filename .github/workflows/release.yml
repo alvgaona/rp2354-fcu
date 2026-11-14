@@ -1,0 +1,55 @@
+name: release
+
+on:
+  push:
+    tags: ["rev-[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # for git-cliff
+
+      - name: Verify tag
+        if: github.ref_type == 'tag'
+        run: |
+          rev="(rev \"${GITHUB_REF_NAME#rev-}\")"
+          grep -q "$rev" hw/fc.kicad_sch && grep -q "$rev" hw/fc.kicad_pcb
+
+      - name: Install KiCad and font
+        run: |
+          sudo add-apt-repository -y ppa:kicad/kicad-10.0-releases
+          sudo apt-get install -y -q kicad
+          mkdir -p ~/.local/share/fonts
+          cp hw/fonts/IBMPlexMono-Medium.ttf ~/.local/share/fonts/
+          fc-cache -f
+
+      - uses: prefix-dev/setup-pixi@v0.11.3
+
+      - name: Build
+        run: pixi run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: board
+          path: build/
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rev=${GITHUB_REF_NAME#rev-}
+          pixi run git-cliff --current --strip header -o build/notes.md
+          cd build
+          for file in fc-gerbers.zip fc-bom.csv fc-cpl.csv fc-schematic.pdf; do
+            cp "$file" "${file%.*}-rev$rev.${file##*.}" # the rev goes in each file name
+          done
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Rev $rev" --notes-file notes.md \
+            "fc-rev$rev.zip" fc-*-rev"$rev".*
